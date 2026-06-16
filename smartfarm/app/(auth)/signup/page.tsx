@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/providers/AuthProvider';
-import { Sprout, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
+import { Sprout, Lock, Mail, ArrowRight, AlertCircle, ShieldCheck, Sparkles, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function SignupPage() {
+  const router = useRouter();
   const { signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -14,14 +16,25 @@ export default function SignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+  const isPasswordStrong = (value: string) => value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password || !confirmPassword) {
       setError('Please fill in all fields');
       return;
     }
+    if (!isValidEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      return;
+    }
+    if (!isPasswordStrong(password)) {
+      setError('Password must be 8+ characters with at least one uppercase and one number');
       return;
     }
     setError(null);
@@ -30,6 +43,8 @@ export default function SignupPage() {
     if (res.error) {
       setError(res.error);
       setSubmitting(false);
+    } else {
+      router.replace('/dashboard');
     }
   };
 
@@ -161,11 +176,47 @@ export default function SignupPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-slate-500">Already registered? </span>
-            <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
-              Sign In here
-            </Link>
+          <div className="mt-6 space-y-4">
+            <div className="text-center text-sm">
+              <span className="text-slate-500">Already registered? </span>
+              <Link href="/login" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
+                Sign In here
+              </Link>
+            </div>
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-950/80 p-5 text-slate-300 shadow-lg shadow-black/20">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">Why join SmartFarm?</p>
+                  <p className="text-xs text-slate-500">Secure access, farm-first workflow, and guided onboarding.</p>
+                </div>
+                <Link href="/landing" className="text-emerald-300 text-xs font-semibold hover:text-emerald-200">
+                  Explore features
+                </Link>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-1 h-5 w-5 text-emerald-400" />
+                  <div>
+                    <p className="font-semibold text-white">Strong login flow</p>
+                    <p className="text-sm text-slate-400">Front-end validation ensures secure account creation and reduces errors.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Sparkles className="mt-1 h-5 w-5 text-sky-400" />
+                  <div>
+                    <p className="font-semibold text-white">Beautiful user experience</p>
+                    <p className="text-sm text-slate-400">Animated pages and clear prompts make signup feel polished and easy.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Globe className="mt-1 h-5 w-5 text-violet-400" />
+                  <div>
+                    <p className="font-semibold text-white">Farm operations explained</p>
+                    <p className="text-sm text-slate-400">Learn how SmartFarm manages fields, inventory, finance, and tasks.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sprout } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-const PUBLIC_PATHS = ['/login', '/signup'];
+const PUBLIC_PATHS = ['/', '/landing', '/login', '/signup'];
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
@@ -18,9 +18,9 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   useEffect(() => {
     if (!loading) {
       if (!user && !isPublic) {
-        router.push('/login');
+        router.replace('/login');
       } else if (user && isPublic) {
-        router.push('/');
+        router.replace('/dashboard');
       }
     }
   }, [user, loading, isPublic, router]);

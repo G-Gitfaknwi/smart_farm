@@ -19,8 +19,8 @@ export default function MobileBottomNav() {
   const { signOut, user } = useAuth();
 
   return (
-    <nav aria-label="Bottom navigation" className="fixed bottom-0 left-0 right-0 z-40 bg-white/80 dark:bg-zinc-950/80 backdrop-blur-lg border-t border-slate-200/50 dark:border-zinc-900/50 md:hidden px-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-      <div className="max-w-md mx-auto flex justify-between items-center h-16">
+    <nav aria-label="Bottom navigation" className="fixed bottom-4 left-4 right-4 z-40 rounded-3xl bg-white/90 dark:bg-zinc-950/90 backdrop-blur-2xl border border-slate-200/60 dark:border-zinc-800/70 md:hidden shadow-2xl shadow-slate-950/10">
+      <div className="max-w-md mx-auto flex justify-between items-center h-16 px-3">
         {tabs.map((t) => {
           const active = path === t.href;
           const Icon = t.icon;

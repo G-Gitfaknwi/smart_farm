@@ -2,14 +2,14 @@
 
 import { useMemo, useState, useEffect } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
-import InventoryCard from "../../components/inventory/InventoryCard";
 import AddEditItemDialog from "../../components/inventory/AddEditItemDialog";
+import InventoryCard from "../../components/inventory/InventoryCard";
 import { dbService } from "../../lib/services/db";
 import { Plus, Box, Search, AlertTriangle, Layers } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function InventoryPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState([] as any[]);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -100,26 +100,26 @@ export default function InventoryPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 pb-10">
-        
-        {/* Header */}
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Inventory Management</h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">
-              Track feeds, seeds, fertilizers, and medical inputs.
-            </p>
-          </div>
-          <button 
-            onClick={() => { setSelectedItem(null); setDialogOpen(true); }}
-            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-white text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Add Stock Item
-          </button>
-        </header>
+        <div className="grid gap-6 rounded-[2rem] border border-slate-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-xl p-6 shadow-sm">
+          {/* Header */}
+          <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Inventory Management</h1>
+              <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">
+                Track feeds, seeds, fertilizers, and medical inputs.
+              </p>
+            </div>
+            <button 
+              onClick={() => { setSelectedItem(null); setDialogOpen(true); }}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add Stock Item
+            </button>
+          </header>
 
-        {/* Aggregate Stats */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Aggregate Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: "Total Items logged", value: stats.totalItems, icon: Box, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10" },
             { label: "Low Stock warnings", value: stats.lowStock, icon: AlertTriangle, color: stats.lowStock > 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-400", bg: stats.lowStock > 0 ? "bg-rose-500/10 animate-pulse" : "bg-slate-500/10" },
@@ -204,6 +204,7 @@ export default function InventoryPage() {
             </AnimatePresence>
           </motion.section>
         )}
+      </div>
       </div>
 
       {/* Add / Edit Dialog */}

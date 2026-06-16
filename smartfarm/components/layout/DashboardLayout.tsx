@@ -29,9 +29,10 @@ export default function DashboardLayout({ children }: Props) {
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-[120px] dark:bg-emerald-500/10"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] dark:bg-indigo-500/10"></div>
+        <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent"></div>
       </div>
 
-      <div className="relative z-10 w-[min(100%,90vw)] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
         {isLocal && (
           <div className="w-full bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 text-xs px-4 py-2 mt-4 rounded-xl flex items-center gap-2">
             <Info className="w-4 h-4 shrink-0" />

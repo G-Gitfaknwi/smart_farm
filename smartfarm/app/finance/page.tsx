@@ -79,18 +79,20 @@ export default function FinancePage() {
   return (
     <DashboardLayout>
       <div className="space-y-8">
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Financial Management</h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">Overview of income, expenses and cash flow.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <AddTransactionDialog 
-              categories={categories} 
-              onAddTransaction={handleAddTransaction} 
-            />
-          </div>
-        </header>
+        <div className="grid gap-6 rounded-[2rem] border border-slate-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-xl p-6 shadow-sm">
+          <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Financial Management</h1>
+              <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">Overview of income, expenses and cash flow.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <AddTransactionDialog 
+                categories={categories} 
+                onAddTransaction={handleAddTransaction} 
+              />
+            </div>
+          </header>
+        </div>
 
         <motion.section 
           initial={{ opacity: 0, y: 10 }} 

@@ -1,22 +1,34 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/providers/AuthProvider';
-import { Sprout, Lock, Mail, ArrowRight, AlertCircle, Info } from 'lucide-react';
+import { Sprout, Lock, Mail, ArrowRight, AlertCircle, Info, ShieldCheck, Sparkles, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function LoginPage() {
+  const router = useRouter();
   const { signIn, isLocal } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) {
       setError('Please fill in all fields');
+      return;
+    }
+    if (!isValidEmail(email)) {
+      setError('Enter a valid email address');
+      return;
+    }
+    if (password.length < 8) {
+      setError('Password must be at least 8 characters long');
       return;
     }
     setError(null);
@@ -25,6 +37,8 @@ export default function LoginPage() {
     if (res.error) {
       setError(res.error);
       setSubmitting(false);
+    } else {
+      router.replace('/dashboard');
     }
   };
 
@@ -159,11 +173,47 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm">
-            <span className="text-slate-500">Need a new account? </span>
-            <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
-              Register here
-            </Link>
+          <div className="mt-6 space-y-4">
+            <div className="text-center text-sm">
+              <span className="text-slate-500">Need a new account? </span>
+              <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
+                Register here
+              </Link>
+            </div>
+            <div className="rounded-3xl border border-slate-800/80 bg-slate-950/80 p-5 text-slate-300 shadow-lg shadow-black/20">
+              <div className="flex items-center justify-between gap-3 mb-4">
+                <div>
+                  <p className="text-sm font-semibold text-white">SmartFarm highlights</p>
+                  <p className="text-xs text-slate-500">Powered by motion, modern visuals, and fast auth.</p>
+                </div>
+                <Link href="/landing" className="text-emerald-300 text-xs font-semibold hover:text-emerald-200">
+                  Learn More
+                </Link>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="mt-1 h-5 w-5 text-emerald-400" />
+                  <div>
+                    <p className="font-semibold text-white">Secure sign in</p>
+                    <p className="text-sm text-slate-400">Local mock auth or Supabase-backed login for true farm security.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Sparkles className="mt-1 h-5 w-5 text-sky-400" />
+                  <div>
+                    <p className="font-semibold text-white">Animated experience</p>
+                    <p className="text-sm text-slate-400">Every screen uses subtle motion and polished layout for clarity.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Globe className="mt-1 h-5 w-5 text-violet-400" />
+                  <div>
+                    <p className="font-semibold text-white">Farm-ready overview</p>
+                    <p className="text-sm text-slate-400">See your farm story before you sign in with the landing page.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </motion.div>
