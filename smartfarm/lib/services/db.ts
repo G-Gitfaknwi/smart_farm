@@ -1,416 +1,476 @@
 import { createClient } from '../supabase/client';
 
+type DbObject = Record<string, unknown>;
+
 const supabase = createClient();
 
-// Helper to determine if we are using Supabase or local mock storage
-export function isSupabaseConfigured(): boolean {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  return !!(url && key && !url.includes('placeholder-url'));
+const DEFAULT_IMAGE = '/images/corn-field.png';
+
+async function getCount(table: string, filters: Record<string, unknown> = {}): Promise<number> {
+  const query = supabase.from(table).select('id', { count: 'exact', head: true });
+  Object.entries(filters).forEach(([key, value]) => query.eq(key, value));
+  const { count, error } = await query;
+  if (error) {
+    console.error(`Supabase count error for ${table}:`, error);
+    return 0;
+  }
+  return count ?? 0;
 }
 
-// Define storage keys
-const KEYS = {
-  FIELDS: 'sf_fields',
-  LIVESTOCK: 'sf_livestock',
-  INVENTORY: 'sf_inventory',
-  TRANSACTIONS: 'sf_transactions',
-  CATEGORIES: 'sf_categories',
-  TASKS: 'sf_tasks',
-  CURRENT_USER: 'sf_current_user',
-};
+async function getTaskStatusId(name: string): Promise<string | null> {
+  const { data, error } = await supabase
+    .from('task_statuses')
+    .select('id')
+    .eq('name', name)
+    .limit(1)
+    .single();
 
-// Initial Seed Data for LocalStorage Mode
-const DEFAULT_FIELDS = [
-  { id: 'f1', title: 'North Field', crop: 'Maize', area: '2.4 ha', workers: 3, status: 'healthy', moisture: 65, image: '/images/corn-field.png' },
-  { id: 'f2', title: 'East Plot', crop: 'Cassava', area: '1.1 ha', workers: 1, status: 'attention', moisture: 38, image: '/images/corn-field.png' },
-  { id: 'f3', title: 'South Orchard', crop: 'Plantain', area: '0.6 ha', workers: 2, status: 'healthy', moisture: 72, image: '/images/corn-field.png' },
-  { id: 'f4', title: 'Demo Bed', crop: 'Vegetables', area: '0.2 ha', workers: 1, status: 'critical', moisture: 20, image: '/images/corn-field.png' },
-];
+  if (error) {
+    console.error('Supabase task status lookup failed:', error);
+    return null;
+  }
 
-const DEFAULT_LIVESTOCK = [
-  { id: 'l1', name: 'Poultry Flock A', type: 'Poultry', count: 450, status: 'healthy', feed: 'Layer Feed (2 bags/day)', health_check: '2026-06-12' },
-  { id: 'l2', name: 'Dairy Cows', type: 'Cattle', count: 12, status: 'healthy', feed: 'Cow Hay (5 bales/day)', health_check: '2026-06-15' },
-  { id: 'l3', name: 'Goats Herd B', type: 'Goats', count: 28, status: 'attention', feed: 'Grazing + Mineral Blocks', health_check: '2026-06-10' },
-  { id: 'l4', name: 'Porkers', type: 'Pigs', count: 15, status: 'healthy', feed: 'Swine Grower', health_check: '2026-06-14' },
-];
-
-const DEFAULT_INVENTORY = [
-  { id: 'i1', name: 'Maize Seed', category: 'Seeds', qty: 120, unit: 'kg', lowStock: false },
-  { id: 'i2', name: 'Layer Feed', category: 'Feed', qty: 8, unit: 'bags', lowStock: true },
-  { id: 'i3', name: 'NPK Fertilizer', category: 'Fertilizer', qty: 24, unit: 'kg', lowStock: false },
-  { id: 'i4', name: 'Oxytetracycline', category: 'Medicine', qty: 2, unit: 'bottles', lowStock: true },
-  { id: 'i5', name: 'Cow Hay', category: 'Feed', qty: 60, unit: 'bales', lowStock: false },
-];
-
-const DEFAULT_CATEGORIES = [
-  { id: 'c1', name: 'Crop Sales', type: 'income', icon: 'sprout' },
-  { id: 'c2', name: 'Livestock Sales', type: 'income', icon: 'beef' },
-  { id: 'c3', name: 'Other Income', type: 'income', icon: 'circle-dollar-sign' },
-  { id: 'c4', name: 'Seeds & inputs', type: 'expense', icon: 'leaf' },
-  { id: 'c5', name: 'Animal Feed', type: 'expense', icon: 'wheat' },
-  { id: 'c6', name: 'Wages & Labor', type: 'expense', icon: 'users' },
-  { id: 'c7', name: 'Equipment & Fuel', type: 'expense', icon: 'truck' },
-];
-
-const DEFAULT_TRANSACTIONS = [
-  { id: 't1', type: 'income', amount: 350000, description: 'Maize harvest — bulk sale to Douala distributor', date: '2026-06-10', status: 'paid', payment_method: 'mobile_money', category_id: 'c1' },
-  { id: 't2', type: 'expense', amount: 45000, description: 'NPK Fertilizer (50 kg bags x 3)', date: '2026-06-08', status: 'paid', payment_method: 'cash', category_id: 'c4' },
-  { id: 't3', type: 'income', amount: 90000, description: 'Eggs collection — weekly market run', date: '2026-06-05', status: 'paid', payment_method: 'cash', category_id: 'c2' },
-  { id: 't4', type: 'expense', amount: 75000, description: 'Seasonal labor — weeding crew (5 workers)', date: '2026-06-03', status: 'paid', payment_method: 'mobile_money', category_id: 'c6' },
-  { id: 't5', type: 'income', amount: 120000, description: 'Vegetable sales — tomatoes & peppers', date: '2026-06-01', status: 'paid', payment_method: 'bank_transfer', category_id: 'c1' },
-  { id: 't6', type: 'expense', amount: 30000, description: 'Diesel for irrigation pump', date: '2026-05-28', status: 'paid', payment_method: 'cash', category_id: 'c7' },
-  { id: 't7', type: 'expense', amount: 60000, description: 'Veterinary checkup for poultry flock', date: '2026-05-25', status: 'pending', payment_method: 'bank_transfer', category_id: 'c5' },
-];
-
-const DEFAULT_TASKS = [
-  { id: 'g1', title: 'Irrigate north field', assignee: 'Aminata', dueDate: '2026-06-16', status: 'pending' },
-  { id: 'g2', title: 'Repair water pump', assignee: 'Kofi', dueDate: '2026-06-18', status: 'in_progress' },
-  { id: 'g3', title: 'Harvest peppers — south plot', assignee: 'Adjoa', dueDate: '2026-06-20', status: 'pending' },
-  { id: 'g4', title: 'Apply pesticide to maize', assignee: 'Moussa', dueDate: '2026-06-14', status: 'done' },
-  { id: 'g5', title: 'Feed poultry — morning round', assignee: 'Fatou', dueDate: '2026-06-15', status: 'done' },
-  { id: 'g6', title: 'Prune plantain suckers', assignee: 'Aminata', dueDate: '2026-06-22', status: 'pending' },
-];
-
-// Initialize Storage if empty
-function initializeStorage() {
-  if (typeof window === 'undefined') return;
-  if (!localStorage.getItem(KEYS.FIELDS)) localStorage.setItem(KEYS.FIELDS, JSON.stringify(DEFAULT_FIELDS));
-  if (!localStorage.getItem(KEYS.LIVESTOCK)) localStorage.setItem(KEYS.LIVESTOCK, JSON.stringify(DEFAULT_LIVESTOCK));
-  if (!localStorage.getItem(KEYS.INVENTORY)) localStorage.setItem(KEYS.INVENTORY, JSON.stringify(DEFAULT_INVENTORY));
-  if (!localStorage.getItem(KEYS.CATEGORIES)) localStorage.setItem(KEYS.CATEGORIES, JSON.stringify(DEFAULT_CATEGORIES));
-  if (!localStorage.getItem(KEYS.TRANSACTIONS)) localStorage.setItem(KEYS.TRANSACTIONS, JSON.stringify(DEFAULT_TRANSACTIONS));
-  if (!localStorage.getItem(KEYS.TASKS)) localStorage.setItem(KEYS.TASKS, JSON.stringify(DEFAULT_TASKS));
+  return data?.id || null;
 }
 
-// Ensure execution is client-safe
-if (typeof window !== 'undefined') {
-  initializeStorage();
+async function getOrCreateLivestockType(name: string): Promise<string | null> {
+  if (!name) return null;
+  const { data, error } = await supabase
+    .from('livestock_types')
+    .select('id')
+    .eq('name', name)
+    .limit(1)
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    console.error('Supabase livestock type lookup failed:', error);
+    return null;
+  }
+
+  if (data?.id) return data.id;
+
+  const { data: inserted, error: insertError } = await supabase
+    .from('livestock_types')
+    .insert([{ name }])
+    .select('id')
+    .limit(1)
+    .single();
+
+  if (insertError) {
+    console.error('Supabase livestock type insert failed:', insertError);
+    return null;
+  }
+
+  return inserted?.id || null;
 }
 
-function getLocalData<T>(key: string): T[] {
-  if (typeof window === 'undefined') return [];
-  const raw = localStorage.getItem(key);
-  return raw ? JSON.parse(raw) : [];
-}
-
-function setLocalData<T>(key: string, data: T[]): void {
-  if (typeof window === 'undefined') return;
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
-// Service Methods
 export const dbService = {
-  // === FIELDS & CROPS ===
-  async getFields(): Promise<any[]> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.from('fields').select('*').order('created_at', { ascending: false });
-      if (!error && data) return data;
+  async getOverviewStats(): Promise<{ fields: number; workers: number; tasks: number }> {
+    const [fields, workers, tasks] = await Promise.all([
+      getCount('fields'),
+      getCount('farm_user_roles'),
+      getCount('tasks'),
+    ]);
+
+    return {
+      fields,
+      workers,
+      tasks,
+    };
+  },
+
+  async getFields(): Promise<DbObject[]> {
+    const { data, error } = await supabase.from('fields').select('*').order('created_at', { ascending: false });
+    if (error) {
       console.error('Supabase Fields Read Error:', error);
+      return [];
     }
-    return getLocalData(KEYS.FIELDS);
-  },
-
-  async createField(item: any): Promise<any> {
-    const newItem = { ...item, id: item.id || crypto.randomUUID() };
-    if (isSupabaseConfigured()) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from('fields')
-        .insert([{ ...newItem, user_id: user?.id }])
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Field Insert Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.FIELDS);
-    local.unshift(newItem);
-    setLocalData(KEYS.FIELDS, local);
-    return newItem;
-  },
-
-  async updateField(id: string, updates: any): Promise<any> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('fields')
-        .update(updates)
-        .eq('id', id)
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Field Update Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.FIELDS);
-    const index = local.findIndex((x) => x.id === id);
-    if (index !== -1) {
-      local[index] = { ...local[index], ...updates };
-      setLocalData(KEYS.FIELDS, local);
-      return local[index];
-    }
-    return null;
-  },
-
-  async deleteField(id: string): Promise<boolean> {
-    if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('fields').delete().eq('id', id);
-      if (!error) return true;
-      console.error('Supabase Field Delete Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.FIELDS);
-    const filtered = local.filter((x) => x.id !== id);
-    setLocalData(KEYS.FIELDS, filtered);
-    return true;
-  },
-
-  // === LIVESTOCK ===
-  async getLivestock(): Promise<any[]> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.from('livestock').select('*').order('created_at', { ascending: false });
-      if (!error && data) return data;
-      console.error('Supabase Livestock Read Error:', error);
-    }
-    return getLocalData(KEYS.LIVESTOCK);
-  },
-
-  async createLivestock(item: any): Promise<any> {
-    const newItem = { ...item, id: item.id || crypto.randomUUID() };
-    if (isSupabaseConfigured()) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from('livestock')
-        .insert([{ ...newItem, user_id: user?.id }])
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Livestock Insert Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.LIVESTOCK);
-    local.unshift(newItem);
-    setLocalData(KEYS.LIVESTOCK, local);
-    return newItem;
-  },
-
-  async updateLivestock(id: string, updates: any): Promise<any> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('livestock')
-        .update(updates)
-        .eq('id', id)
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Livestock Update Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.LIVESTOCK);
-    const index = local.findIndex((x) => x.id === id);
-    if (index !== -1) {
-      local[index] = { ...local[index], ...updates };
-      setLocalData(KEYS.LIVESTOCK, local);
-      return local[index];
-    }
-    return null;
-  },
-
-  async deleteLivestock(id: string): Promise<boolean> {
-    if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('livestock').delete().eq('id', id);
-      if (!error) return true;
-      console.error('Supabase Livestock Delete Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.LIVESTOCK);
-    const filtered = local.filter((x) => x.id !== id);
-    setLocalData(KEYS.LIVESTOCK, filtered);
-    return true;
-  },
-
-  // === INVENTORY ===
-  async getInventory(): Promise<any[]> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.from('inventory').select('*').order('created_at', { ascending: false });
-      if (!error && data) return data;
-      console.error('Supabase Inventory Read Error:', error);
-    }
-    return getLocalData(KEYS.INVENTORY);
-  },
-
-  async createInventoryItem(item: any): Promise<any> {
-    const newItem = { ...item, id: item.id || crypto.randomUUID() };
-    if (isSupabaseConfigured()) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from('inventory')
-        .insert([{ ...newItem, user_id: user?.id }])
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Inventory Insert Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.INVENTORY);
-    local.unshift(newItem);
-    setLocalData(KEYS.INVENTORY, local);
-    return newItem;
-  },
-
-  async updateInventoryItem(id: string, updates: any): Promise<any> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('inventory')
-        .update(updates)
-        .eq('id', id)
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Inventory Update Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.INVENTORY);
-    const index = local.findIndex((x) => x.id === id);
-    if (index !== -1) {
-      local[index] = { ...local[index], ...updates };
-      setLocalData(KEYS.INVENTORY, local);
-      return local[index];
-    }
-    return null;
-  },
-
-  async deleteInventoryItem(id: string): Promise<boolean> {
-    if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('inventory').delete().eq('id', id);
-      if (!error) return true;
-      console.error('Supabase Inventory Delete Error:', error);
-    }
-    const local = getLocalData<any>(KEYS.INVENTORY);
-    const filtered = local.filter((x) => x.id !== id);
-    setLocalData(KEYS.INVENTORY, filtered);
-    return true;
-  },
-
-  // === TRANSACTIONS (FINANCE) ===
-  async getTransactions(): Promise<any[]> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*, category:financial_categories(*)')
-        .order('date', { ascending: false });
-      if (!error && data) return data;
-      console.error('Supabase Transactions Read Error:', error);
-    }
-    // Locally populate categories matching category_id
-    const txs = getLocalData<any>(KEYS.TRANSACTIONS);
-    const cats = getLocalData<any>(KEYS.CATEGORIES);
-    return txs.map((tx) => ({
-      ...tx,
-      category: cats.find((c) => c.id === tx.category_id) || { name: 'Uncategorized', icon: 'circle-dollar-sign' },
+    return data.map((field: DbObject) => ({
+      ...field,
+      title: field.name,
+      crop:
+        typeof field.crop === 'string'
+          ? field.crop
+          : typeof field.notes === 'string'
+          ? field.notes.split(' ')[0]
+          : 'Crop',
+      area: field.area_ha ? `${field.area_ha} ha` : '0 ha',
+      workers: field.workers ?? 0,
+      status: field.status || 'healthy',
+      moisture: field.moisture ?? 0,
+      image: field.image || DEFAULT_IMAGE,
     }));
   },
 
-  async createTransaction(tx: any): Promise<any> {
-    const newTx = { ...tx, id: tx.id || crypto.randomUUID() };
-    if (isSupabaseConfigured()) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from('transactions')
-        .insert([{ ...newTx, user_id: user?.id }])
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Transaction Insert Error:', error);
+  async createField(item: DbObject): Promise<DbObject | null> {
+    const fieldPayload: DbObject = {
+      name: item.title,
+      area_ha:
+        typeof item.area === 'string' ? Number(item.area.replace(' ha', '')) || null : null,
+      notes: item.crop,
+    };
+    const { data, error } = await supabase.from('fields').insert([fieldPayload]).select();
+    if (error) {
+      console.error('Supabase Field Insert Error:', error);
+      return null;
     }
-    const local = getLocalData<any>(KEYS.TRANSACTIONS);
-    local.unshift(newTx);
-    setLocalData(KEYS.TRANSACTIONS, local);
-    return newTx;
+    return {
+      ...data?.[0],
+      title: data?.[0]?.name,
+      crop: item.crop,
+      area: item.area,
+      workers: item.workers || 0,
+      status: item.status || 'healthy',
+      moisture: item.moisture ?? 0,
+      image: item.image || DEFAULT_IMAGE,
+    };
   },
 
-  async updateTransaction(id: string, updates: any): Promise<any> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('transactions')
-        .update(updates)
-        .eq('id', id)
-        .select();
-      if (!error && data) return data[0];
-      console.error('Supabase Transaction Update Error:', error);
+  async updateField(id: string, updates: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {};
+    if (updates.title) payload.name = updates.title;
+    if (typeof updates.area === 'string') payload.area_ha = Number(updates.area.replace(' ha', '')) || null;
+    if (updates.crop) payload.notes = updates.crop;
+
+    const { data, error } = await supabase.from('fields').update(payload).eq('id', id).select();
+    if (error) {
+      console.error('Supabase Field Update Error:', error);
+      return null;
     }
-    const local = getLocalData<any>(KEYS.TRANSACTIONS);
-    const index = local.findIndex((x) => x.id === id);
-    if (index !== -1) {
-      local[index] = { ...local[index], ...updates };
-      setLocalData(KEYS.TRANSACTIONS, local);
-      return local[index];
-    }
-    return null;
+    return {
+      ...data?.[0],
+      title: data?.[0]?.name,
+      crop: data?.[0]?.notes,
+      area: data?.[0]?.area_ha ? `${data[0].area_ha} ha` : '0 ha',
+      workers: updates.workers ?? data?.[0]?.workers ?? 0,
+      status: updates.status || data?.[0]?.status || 'healthy',
+      moisture: updates.moisture ?? data?.[0]?.moisture ?? 0,
+      image: updates.image || data?.[0]?.image || DEFAULT_IMAGE,
+    };
   },
 
-  async deleteTransaction(id: string): Promise<boolean> {
-    if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('transactions').delete().eq('id', id);
-      if (!error) return true;
-      console.error('Supabase Transaction Delete Error:', error);
+  async deleteField(id: string): Promise<boolean> {
+    const { error } = await supabase.from('fields').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase Field Delete Error:', error);
+      return false;
     }
-    const local = getLocalData<any>(KEYS.TRANSACTIONS);
-    const filtered = local.filter((x) => x.id !== id);
-    setLocalData(KEYS.TRANSACTIONS, filtered);
     return true;
   },
 
-  async getCategories(): Promise<any[]> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.from('financial_categories').select('*');
-      if (!error && data) return data;
+  async getLivestock(): Promise<DbObject[]> {
+    const { data, error } = await supabase
+      .from('livestock_units')
+      .select('*, type:livestock_types(name)')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Supabase Livestock Read Error:', error);
+      return [];
+    }
+
+    return data.map((item: DbObject) => ({
+      id: item.id,
+      name: item.name,
+      type: typeof item.type === 'object' && item.type !== null ? (item.type as DbObject).name || 'Livestock' : 'Livestock',
+      count: item.count ?? 0,
+      status: item.status || 'healthy',
+      feed: item.feed || 'Standard diet',
+      health_check: item.health_check || null,
+    }));
+  },
+
+  async createLivestock(item: DbObject): Promise<DbObject | null> {
+    const typeId = await getOrCreateLivestockType((item.type as string) || 'Livestock');
+    const payload: DbObject = {
+      name: item.name,
+      livestock_type_id: typeId,
+      external_tag: item.external_tag || null,
+    };
+    const { data, error } = await supabase.from('livestock_units').insert([payload]).select();
+    if (error) {
+      console.error('Supabase Livestock Insert Error:', error);
+      return null;
+    }
+    return {
+      id: data?.[0]?.id,
+      name: data?.[0]?.name,
+      type: item.type,
+      count: item.count ?? 0,
+      status: item.status || 'healthy',
+      feed: item.feed || 'Standard diet',
+      health_check: item.health_check || null,
+    };
+  },
+
+  async updateLivestock(id: string, updates: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {};
+    if (updates.name) payload.name = updates.name;
+    if (updates.type) {
+      const typeId = await getOrCreateLivestockType(updates.type as string);
+      if (typeId) payload.livestock_type_id = typeId;
+    }
+
+    const { data, error } = await supabase.from('livestock_units').update(payload).eq('id', id).select();
+    if (error) {
+      console.error('Supabase Livestock Update Error:', error);
+      return null;
+    }
+    const record = data?.[0] || {};
+    return {
+      id: record.id,
+      name: record.name,
+      type: updates.type || record.type?.name || 'Livestock',
+      count: updates.count ?? record.count ?? 0,
+      status: updates.status || record.status || 'healthy',
+      feed: updates.feed || record.feed || 'Standard diet',
+      health_check: updates.health_check || record.health_check || null,
+    };
+  },
+
+  async deleteLivestock(id: string): Promise<boolean> {
+    const { error } = await supabase.from('livestock_units').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase Livestock Delete Error:', error);
+      return false;
+    }
+    return true;
+  },
+
+  async getInventory(): Promise<DbObject[]> {
+    const { data, error } = await supabase.from('inventory_items').select('*').order('created_at', { ascending: false });
+    if (error) {
+      console.error('Supabase Inventory Read Error:', error);
+      return [];
+    }
+    return data.map((item: DbObject) => ({
+      id: item.id,
+      name: item.name,
+      category: item.item_type || 'Inventory',
+      qty: item.qty ?? 0,
+      unit: item.unit || 'pcs',
+      lowStock: item.lowStock ?? false,
+    }));
+  },
+
+  async createInventoryItem(item: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {
+      name: item.name,
+      item_type: item.category,
+      sku: item.sku || null,
+    };
+    const { data, error } = await supabase.from('inventory_items').insert([payload]).select();
+    if (error) {
+      console.error('Supabase Inventory Insert Error:', error);
+      return null;
+    }
+    return {
+      id: data?.[0]?.id,
+      name: data?.[0]?.name,
+      category: item.category,
+      qty: item.qty ?? 0,
+      unit: item.unit || 'pcs',
+      lowStock: item.lowStock ?? false,
+    };
+  },
+
+  async updateInventoryItem(id: string, updates: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {};
+    if (updates.name) payload.name = updates.name;
+    if (updates.category) payload.item_type = updates.category;
+    if (updates.sku) payload.sku = updates.sku;
+
+    const { data, error } = await supabase.from('inventory_items').update(payload).eq('id', id).select();
+    if (error) {
+      console.error('Supabase Inventory Update Error:', error);
+      return null;
+    }
+    const record = data?.[0] || {};
+    return {
+      id: record.id,
+      name: record.name,
+      category: updates.category || record.item_type || 'Inventory',
+      qty: updates.qty ?? record.qty ?? 0,
+      unit: updates.unit || record.unit || 'pcs',
+      lowStock: updates.lowStock ?? record.lowStock ?? false,
+    };
+  },
+
+  async deleteInventoryItem(id: string): Promise<boolean> {
+    const { error } = await supabase.from('inventory_items').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase Inventory Delete Error:', error);
+      return false;
+    }
+    return true;
+  },
+
+  async getTransactions(): Promise<DbObject[]> {
+    const { data, error } = await supabase
+      .from('financial_transactions')
+      .select('*, category:financial_transaction_categories(*)')
+      .order('occurred_on', { ascending: false });
+
+    if (error) {
+      console.error('Supabase Transactions Read Error:', error);
+      return [];
+    }
+
+    return data.map((tx: DbObject) => ({
+      ...tx,
+      type: tx.transaction_type || 'income',
+      description: tx.memo || '',
+      date: tx.occurred_on || null,
+      status: tx.status || 'paid',
+      payment_method: tx.payment_method || 'other',
+      category: tx.category || { name: 'Uncategorized' },
+    }));
+  },
+
+  async createTransaction(tx: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {
+      transaction_type: tx.type,
+      amount: tx.amount,
+      memo: tx.description,
+      occurred_on: tx.date,
+      category_id: tx.category_id,
+      currency: tx.currency || 'XAF',
+    };
+    const { data, error } = await supabase.from('financial_transactions').insert([payload]).select();
+    if (error) {
+      console.error('Supabase Transaction Insert Error:', error);
+      return null;
+    }
+    const created = data?.[0];
+    return {
+      ...created,
+      type: created.transaction_type,
+      description: created.memo,
+      date: created.occurred_on,
+      status: created.status || tx.status || 'paid',
+      payment_method: created.payment_method || tx.payment_method || 'other',
+      category: tx.category || { name: 'Uncategorized' },
+    };
+  },
+
+  async updateTransaction(id: string, updates: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {};
+    if (updates.type) payload.transaction_type = updates.type;
+    if (updates.description) payload.memo = updates.description;
+    if (updates.date) payload.occurred_on = updates.date;
+    if (updates.category_id) payload.category_id = updates.category_id;
+    if (updates.currency) payload.currency = updates.currency;
+
+    const { data, error } = await supabase.from('financial_transactions').update(payload).eq('id', id).select();
+    if (error) {
+      console.error('Supabase Transaction Update Error:', error);
+      return null;
+    }
+    const updated = data?.[0];
+    return {
+      ...updated,
+      type: updated.transaction_type,
+      description: updated.memo,
+      date: updated.occurred_on,
+      status: updated.status || updates.status || 'paid',
+      payment_method: updated.payment_method || updates.payment_method || 'other',
+      category: updated.category || { name: 'Uncategorized' },
+    };
+  },
+
+  async deleteTransaction(id: string): Promise<boolean> {
+    const { error } = await supabase.from('financial_transactions').delete().eq('id', id);
+    if (error) {
+      console.error('Supabase Transaction Delete Error:', error);
+      return false;
+    }
+    return true;
+  },
+
+  async getCategories(): Promise<DbObject[]> {
+    const { data, error } = await supabase.from('financial_transaction_categories').select('*');
+    if (error) {
       console.error('Supabase Categories Read Error:', error);
+      return [];
     }
-    return getLocalData(KEYS.CATEGORIES);
+    return data.map((category: DbObject) => ({
+      icon: category.icon || 'circle-dollar-sign',
+    }));
   },
 
-  // === TASKS ===
-  async getTasks(): Promise<any[]> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase.from('tasks').select('*').order('due_date', { ascending: true });
-      if (!error && data) return data;
+  async getTasks(): Promise<DbObject[]> {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select('*, status:task_statuses(name)')
+      .order('due_date', { ascending: true });
+
+    if (error) {
       console.error('Supabase Tasks Read Error:', error);
+      return [];
     }
-    return getLocalData(KEYS.TASKS);
+
+    return data.map((task: DbObject) => {
+      const statusObj = task.status as DbObject | undefined;
+      return {
+        ...task,
+        status: typeof statusObj?.name === 'string' ? statusObj.name : 'pending',
+        dueDate: task.due_date || null,
+        assignee: task.assignee || 'Unassigned',
+      };
+    });
   },
 
-  async createTask(task: any): Promise<any> {
-    const newTask = { ...task, id: task.id || crypto.randomUUID() };
-    if (isSupabaseConfigured()) {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase
-        .from('tasks')
-        .insert([{ ...newTask, user_id: user?.id }])
-        .select();
-      if (!error && data) return data[0];
+  async createTask(task: DbObject): Promise<DbObject | null> {
+    const statusId = await getTaskStatusId((task.status as string) || 'pending');
+    const payload: DbObject = {
+      title: task.title,
+      due_date: task.due_date,
+      created_by: task.created_by || null,
+      status_id: statusId,
+    };
+    const { data, error } = await supabase.from('tasks').insert([payload]).select();
+    if (error) {
       console.error('Supabase Task Insert Error:', error);
+      return null;
     }
-    const local = getLocalData<any>(KEYS.TASKS);
-    local.unshift(newTask);
-    setLocalData(KEYS.TASKS, local);
-    return newTask;
+    const created = data?.[0];
+    return {
+      ...created,
+      status: task.status || 'pending',
+      dueDate: created.due_date || task.due_date,
+      assignee: task.assignee || 'Unassigned',
+    };
   },
 
-  async updateTask(id: string, updates: any): Promise<any> {
-    if (isSupabaseConfigured()) {
-      const { data, error } = await supabase
-        .from('tasks')
-        .update(updates)
-        .eq('id', id)
-        .select();
-      if (!error && data) return data[0];
+  async updateTask(id: string, updates: DbObject): Promise<DbObject | null> {
+    const payload: DbObject = {};
+    if (updates.title) payload.title = updates.title;
+    if (updates.dueDate) payload.due_date = updates.dueDate;
+    if (typeof updates.status === 'string') {
+      const statusId = await getTaskStatusId(updates.status);
+      if (statusId) payload.status_id = statusId;
+    }
+
+    const { data, error } = await supabase.from('tasks').update(payload).eq('id', id).select();
+    if (error) {
       console.error('Supabase Task Update Error:', error);
+      return null;
     }
-    const local = getLocalData<any>(KEYS.TASKS);
-    const index = local.findIndex((x) => x.id === id);
-    if (index !== -1) {
-      local[index] = { ...local[index], ...updates };
-      setLocalData(KEYS.TASKS, local);
-      return local[index];
-    }
-    return null;
+    const updated = data?.[0];
+    return {
+      ...updated,
+      status: updates.status || updated.status || 'pending',
+      dueDate: updated.due_date || updates.dueDate,
+      assignee: updated.assignee || 'Unassigned',
+    };
   },
 
   async deleteTask(id: string): Promise<boolean> {
-    if (isSupabaseConfigured()) {
-      const { error } = await supabase.from('tasks').delete().eq('id', id);
-      if (!error) return true;
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+    if (error) {
       console.error('Supabase Task Delete Error:', error);
+      return false;
     }
-    const local = getLocalData<any>(KEYS.TASKS);
-    const filtered = local.filter((x) => x.id !== id);
-    setLocalData(KEYS.TASKS, filtered);
     return true;
   },
 };

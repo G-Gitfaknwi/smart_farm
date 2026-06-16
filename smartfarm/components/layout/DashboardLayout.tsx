@@ -21,7 +21,7 @@ const sidebarLinks = [
 
 export default function DashboardLayout({ children }: Props) {
   const pathname = usePathname();
-  const { user, signOut, isLocal } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-[100vh] bg-slate-50 dark:bg-zinc-950 font-sans text-slate-900 dark:text-slate-100 selection:bg-emerald-500/30">
@@ -33,13 +33,6 @@ export default function DashboardLayout({ children }: Props) {
       </div>
 
       <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
-        {isLocal && (
-          <div className="w-full bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 text-xs px-4 py-2 mt-4 rounded-xl flex items-center gap-2">
-            <Info className="w-4 h-4 shrink-0" />
-            <span>Running in <strong>Offline Prototype Mode</strong> (local persistence). Connect Supabase URL/Key to sync with cloud database.</span>
-          </div>
-        )}
-        
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 pb-28 md:pb-8">
           
           {/* Sidebar */}

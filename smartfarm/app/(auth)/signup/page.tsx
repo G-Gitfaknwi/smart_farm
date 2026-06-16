@@ -1,20 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/providers/AuthProvider';
 import { Sprout, Lock, Mail, ArrowRight, AlertCircle, ShieldCheck, Sparkles, Globe } from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
 export default function SignupPage() {
-  const router = useRouter();
   const { signUp } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
   const isPasswordStrong = (value: string) => value.length >= 8 && /[A-Z]/.test(value) && /[0-9]/.test(value);
@@ -38,14 +37,18 @@ export default function SignupPage() {
       return;
     }
     setError(null);
+    setSuccessMessage(null);
     setSubmitting(true);
     const res = await signUp(email, password);
     if (res.error) {
       setError(res.error);
-      setSubmitting(false);
     } else {
-      router.replace('/dashboard');
+      setSuccessMessage(res.message || 'Account created. Please confirm your email address before signing in.');
+      setEmail('');
+      setPassword('');
+      setConfirmPassword('');
     }
+    setSubmitting(false);
   };
 
   return (
@@ -112,6 +115,16 @@ export default function SignupPage() {
               >
                 <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
                 <span>{error}</span>
+              </motion.div>
+            )}
+            {successMessage && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="flex items-center gap-2.5 p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-200 text-sm font-medium"
+              >
+                <ShieldCheck className="w-5 h-5 shrink-0 text-emerald-300" />
+                <span>{successMessage}</span>
               </motion.div>
             )}
 

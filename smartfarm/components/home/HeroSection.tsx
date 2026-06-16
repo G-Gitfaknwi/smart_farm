@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { motion, type Variants } from 'framer-motion';
-import { stats } from '../../lib/mock-data';
+import { dbService } from '../../lib/services/db';
 import { CloudSun, Sunrise, Sunset, Moon } from 'lucide-react';
 import Image from 'next/image';
 
@@ -25,9 +25,29 @@ function getGreeting() {
 
 export default function HeroSection() {
   const [greeting, setGreeting] = useState({ text: 'Welcome', Icon: CloudSun });
+  const [stats, setStats] = useState([
+    { id: 's1', label: 'Fields', value: '0' },
+    { id: 's2', label: 'Workers', value: '0' },
+    { id: 's3', label: 'Tasks', value: '0' },
+  ]);
 
   useEffect(() => {
     setGreeting(getGreeting());
+
+    async function loadStats() {
+      try {
+        const overview = await dbService.getOverviewStats();
+        setStats([
+          { id: 's1', label: 'Fields', value: String(overview.fields) },
+          { id: 's2', label: 'Workers', value: String(overview.workers) },
+          { id: 's3', label: 'Tasks', value: String(overview.tasks) },
+        ]);
+      } catch (error) {
+        console.error('Failed to load overview stats:', error);
+      }
+    }
+
+    loadStats();
   }, []);
 
   const GreetingIcon = greeting.Icon;

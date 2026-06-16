@@ -9,7 +9,7 @@ import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn, isLocal } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -95,21 +95,6 @@ export default function LoginPage() {
           <p className="text-slate-400 text-sm mt-1.5 font-medium">Access your intelligent farming dashboard</p>
         </div>
 
-        {/* Auth Mode Banner */}
-        {isLocal && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="mb-6 flex gap-3 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs leading-relaxed font-medium"
-          >
-            <Info className="w-5 h-5 shrink-0 text-indigo-400" />
-            <div>
-              <span className="font-bold block text-white mb-0.5">Standalone Prototype Mode</span>
-              Supabase parameters are not set. You can sign in using <code className="text-white bg-indigo-500/20 px-1 py-0.5 rounded font-mono">admin@smartfarm.com</code> and password <code className="text-white bg-indigo-500/20 px-1 py-0.5 rounded font-mono">admin123</code>, or register a new local account.
-            </div>
-          </motion.div>
-        )}
 
         {/* Card Form */}
         <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-xl shadow-black/40">
@@ -195,7 +180,7 @@ export default function LoginPage() {
                   <ShieldCheck className="mt-1 h-5 w-5 text-emerald-400" />
                   <div>
                     <p className="font-semibold text-white">Secure sign in</p>
-                    <p className="text-sm text-slate-400">Local mock auth or Supabase-backed login for true farm security.</p>
+                    <p className="text-sm text-slate-400">Supabase-backed login for secure farm access.</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
