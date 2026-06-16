@@ -1,0 +1,172 @@
+'use client';
+
+import React, { useState } from 'react';
+import { useAuth } from '../../../components/providers/AuthProvider';
+import { Sprout, Lock, Mail, ArrowRight, AlertCircle, Info } from 'lucide-react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+
+export default function LoginPage() {
+  const { signIn, isLocal } = useAuth();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      setError('Please fill in all fields');
+      return;
+    }
+    setError(null);
+    setSubmitting(true);
+    const res = await signIn(email, password);
+    if (res.error) {
+      setError(res.error);
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="relative min-h-screen w-full flex items-center justify-center bg-slate-950 font-sans text-slate-100 overflow-hidden">
+      
+      {/* Background visual graphics */}
+      <div className="absolute inset-0 z-0">
+        <motion.div 
+          animate={{
+            scale: [1, 1.1, 0.95, 1],
+            x: [0, 40, -20, 0],
+            y: [0, -30, 20, 0]
+          }}
+          transition={{
+            duration: 15,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute top-[15%] left-[10%] w-[350px] h-[350px] rounded-full bg-emerald-500/10 blur-[100px]"
+        />
+        <motion.div 
+          animate={{
+            scale: [1, 0.9, 1.15, 1],
+            x: [0, -40, 30, 0],
+            y: [0, 40, -30, 0]
+          }}
+          transition={{
+            duration: 18,
+            repeat: Infinity,
+            ease: "easeInOut"
+          }}
+          className="absolute bottom-[15%] right-[10%] w-[400px] h-[400px] rounded-full bg-indigo-500/10 blur-[120px]"
+        />
+        {/* Subtle grid pattern */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]" />
+      </div>
+
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        className="relative z-10 w-full max-w-md px-6 py-12"
+      >
+        {/* Logo Container */}
+        <div className="flex flex-col items-center text-center mb-8">
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-500 border border-emerald-400 shadow-lg shadow-emerald-500/30 mb-4"
+          >
+            <Sprout className="h-8 w-8 text-slate-950" />
+          </motion.div>
+          <h1 className="text-3xl font-extrabold tracking-tight text-white">Welcome Back</h1>
+          <p className="text-slate-400 text-sm mt-1.5 font-medium">Access your intelligent farming dashboard</p>
+        </div>
+
+        {/* Auth Mode Banner */}
+        {isLocal && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.2 }}
+            className="mb-6 flex gap-3 p-4 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs leading-relaxed font-medium"
+          >
+            <Info className="w-5 h-5 shrink-0 text-indigo-400" />
+            <div>
+              <span className="font-bold block text-white mb-0.5">Standalone Prototype Mode</span>
+              Supabase parameters are not set. You can sign in using <code className="text-white bg-indigo-500/20 px-1 py-0.5 rounded font-mono">admin@smartfarm.com</code> and password <code className="text-white bg-indigo-500/20 px-1 py-0.5 rounded font-mono">admin123</code>, or register a new local account.
+            </div>
+          </motion.div>
+        )}
+
+        {/* Card Form */}
+        <div className="bg-slate-900/50 backdrop-blur-xl border border-slate-800 p-8 rounded-3xl shadow-xl shadow-black/40">
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                className="flex items-center gap-2.5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-sm font-medium"
+              >
+                <AlertCircle className="w-5 h-5 shrink-0 text-rose-400" />
+                <span>{error}</span>
+              </motion.div>
+            )}
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="name@domain.com"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-sm font-medium placeholder:text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-white"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex justify-between items-center">
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Password</label>
+              </div>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-sm font-medium placeholder:text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition-all text-white"
+                  required
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={submitting}
+              className="group flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold py-3 shadow-lg shadow-emerald-500/10 cursor-pointer disabled:opacity-50 transition-all text-sm mt-8"
+            >
+              {submitting ? (
+                <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <>
+                  <span>Sign In</span>
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-6 text-center text-sm">
+            <span className="text-slate-500">Need a new account? </span>
+            <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
+              Register here
+            </Link>
+          </div>
+        </div>
+      </motion.div>
+    </div>
+  );
+}

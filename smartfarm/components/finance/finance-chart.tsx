@@ -65,7 +65,7 @@ export function FinanceChart({ data }: FinanceChartProps) {
               <Tooltip 
                 contentStyle={{ borderRadius: '12px', border: '1px solid rgba(255,255,255,0.1)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', background: 'rgba(255,255,255,0.95)' }}
                 itemStyle={{ fontWeight: 600 }}
-                formatter={(value: number, name: string) => [`FCFA ${value}`, name.charAt(0).toUpperCase() + name.slice(1)]}
+                formatter={(value: any, name: any) => [`FCFA ${value}`, String(name).charAt(0).toUpperCase() + String(name).slice(1)]}
               />
               <Area type="monotone" dataKey="income" stroke="#10b981" strokeWidth={3} fillOpacity={1} fill="url(#colorIncome)" />
               <Area type="monotone" dataKey="expense" stroke="#f43f5e" strokeWidth={3} fillOpacity={1} fill="url(#colorExpense)" />

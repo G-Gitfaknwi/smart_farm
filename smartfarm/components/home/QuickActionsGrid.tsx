@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, type Variants } from 'framer-motion';
 import { PlusCircle, ClipboardList, PackagePlus, Compass } from 'lucide-react';
 
 const actions = [
@@ -11,8 +11,8 @@ const actions = [
   { href: '/farm', label: 'View Farm', icon: Compass, color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-500/10' },
 ];
 
-const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
-const card = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { ease: 'easeOut' } } };
+const container: Variants = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.1 } } };
+const card: Variants = { hidden: { opacity: 0, y: 10 }, show: { opacity: 1, y: 0, transition: { ease: 'easeOut' as const } } };
 
 export default function QuickActionsGrid() {
   return (

@@ -4,7 +4,8 @@ import MobileBottomNav from '../layout/MobileBottomNav';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Sprout, Package, Wallet, CheckSquare, Settings } from 'lucide-react';
+import { Home, Sprout, Package, Wallet, CheckSquare, LogOut, Info } from 'lucide-react';
+import { useAuth } from '../providers/AuthProvider';
 
 type Props = {
   children: React.ReactNode;
@@ -20,6 +21,7 @@ const sidebarLinks = [
 
 export default function DashboardLayout({ children }: Props) {
   const pathname = usePathname();
+  const { user, signOut, isLocal } = useAuth();
 
   return (
     <div className="min-h-[100vh] bg-slate-50 dark:bg-zinc-950 font-sans text-slate-900 dark:text-slate-100 selection:bg-emerald-500/30">
@@ -30,6 +32,13 @@ export default function DashboardLayout({ children }: Props) {
       </div>
 
       <div className="relative z-10 w-[min(100%,90vw)] mx-auto px-4 sm:px-6 lg:px-8">
+        {isLocal && (
+          <div className="w-full bg-indigo-600/15 border border-indigo-500/20 text-indigo-400 text-xs px-4 py-2 mt-4 rounded-xl flex items-center gap-2">
+            <Info className="w-4 h-4 shrink-0" />
+            <span>Running in <strong>Offline Prototype Mode</strong> (local persistence). Connect Supabase URL/Key to sync with cloud database.</span>
+          </div>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 pb-28 md:pb-8">
           
           {/* Sidebar */}
@@ -68,6 +77,23 @@ export default function DashboardLayout({ children }: Props) {
                     );
                   })}
                 </ul>
+
+                {/* Profile and Logout Section */}
+                {user && (
+                  <div className="mt-8 pt-6 border-t border-slate-200/60 dark:border-zinc-800/60 px-2 flex flex-col gap-3">
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold text-slate-700 dark:text-zinc-300 truncate">{user.email}</div>
+                      <div className="text-[10px] text-slate-400 dark:text-zinc-500 mt-0.5">{user.role}</div>
+                    </div>
+                    <button 
+                      onClick={() => signOut()}
+                      className="flex items-center gap-2 text-xs font-bold text-rose-500 hover:text-rose-600 dark:hover:text-rose-450 transition-colors cursor-pointer"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.nav>
           </aside>

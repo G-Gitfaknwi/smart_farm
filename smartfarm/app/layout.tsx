@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "../components/providers/AuthProvider";
+import RouteGuard from "../components/shared/RouteGuard";
 
 const inter = Inter({
   variable: "--font-sans",
@@ -28,7 +30,13 @@ export default function RootLayout({
       lang="en"
       className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        <AuthProvider>
+          <RouteGuard>
+            {children}
+          </RouteGuard>
+        </AuthProvider>
+      </body>
     </html>
   );
 }
