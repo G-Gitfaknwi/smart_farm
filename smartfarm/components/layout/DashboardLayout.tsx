@@ -25,54 +25,22 @@ function getInitials(email: string) {
 
 export default function DashboardLayout({ children }: Props) {
   const pathname = usePathname();
-  const { user, signOut, isLocal } = useAuth();
+  const { user, signOut } = useAuth();
 
   const currentPage = sidebarLinks.find(l => l.href === pathname)?.label || 'Dashboard';
 
   return (
     <div className="min-h-[100vh] bg-slate-50 dark:bg-zinc-950 font-sans text-slate-900 dark:text-slate-100 selection:bg-emerald-500/30">
-
-      {/* Ambient background glow */}
-      <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-        <div className="absolute top-[-15%] left-[-8%] w-[45%] h-[45%] rounded-full bg-emerald-500/6 blur-[140px] dark:bg-emerald-500/10" />
-        <div className="absolute bottom-[-15%] right-[-8%] w-[45%] h-[45%] rounded-full bg-indigo-500/5 blur-[140px] dark:bg-indigo-500/10" />
-        <div className="absolute top-[40%] right-[20%] w-[20%] h-[20%] rounded-full bg-emerald-400/3 blur-[100px] dark:bg-emerald-400/5" />
+      {/* Subtle background glow effect */}
+      <div className="fixed inset-0 pointer-events-none z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-[120px] dark:bg-emerald-500/10"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-indigo-500/5 blur-[120px] dark:bg-indigo-500/10"></div>
+        <div className="absolute inset-x-0 top-0 h-36 bg-gradient-to-b from-emerald-500/10 via-transparent to-transparent"></div>
       </div>
 
-      <div className="relative z-10 w-[min(100%,92vw)] mx-auto px-4 sm:px-6 lg:px-8">
-
-        {/* Prototype banner */}
-        {isLocal && (
-          <motion.div
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="w-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-500 dark:text-indigo-400 text-xs px-4 py-2 mt-4 rounded-xl flex items-center gap-2"
-          >
-            <Info className="w-4 h-4 shrink-0" />
-            <span>Running in <strong>Offline Prototype Mode</strong>. Connect Supabase credentials to sync with the cloud.</span>
-          </motion.div>
-        )}
-
-        {/* Mobile top header */}
-        <div className="flex items-center justify-between py-4 md:hidden">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-md shadow-emerald-500/30">
-              <Sprout className="w-4 h-4 text-white" />
-            </div>
-            <span className="font-extrabold text-base tracking-tight text-slate-800 dark:text-white">SmartFarm</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="text-xs font-bold text-slate-500 dark:text-zinc-400">{currentPage}</div>
-            {user && (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm shadow-emerald-500/20">
-                {getInitials(user.email)}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-2 md:pt-8 pb-28 md:pb-10">
-
+      <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-8 pt-8 pb-28 md:pb-8">
+          
           {/* Sidebar */}
           <aside className="hidden md:block md:col-span-3 lg:col-span-2">
             <motion.nav

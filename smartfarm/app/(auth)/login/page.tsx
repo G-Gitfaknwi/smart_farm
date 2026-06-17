@@ -1,242 +1,197 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/providers/AuthProvider';
-import { Sprout, Lock, Mail, ArrowRight, AlertCircle, Info, Eye, EyeOff, Wheat, BarChart3, Users } from 'lucide-react';
+import {
+  Sprout, Lock, Mail, ArrowRight, AlertCircle,
+  ShieldCheck, Sparkles, Globe, Wheat, BarChart3, Users,
+} from 'lucide-react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 
-const features = [
-  { icon: Wheat, label: 'Crop & Field Management' },
-  { icon: BarChart3, label: 'Financial Analytics' },
-  { icon: Users, label: 'Worker Task Tracking' },
-];
-
 export default function LoginPage() {
-  const { signIn, isLocal } = useAuth();
+  const router = useRouter();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+
+  useEffect(() => {
+    try { document.title = 'Sign In — SmartFarm'; } catch (_) {}
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) { setError('Please fill in all fields'); return; }
+    if (!isValidEmail(email)) { setError('Enter a valid email address'); return; }
+    if (password.length < 8) { setError('Password must be at least 8 characters'); return; }
     setError(null);
     setSubmitting(true);
     const res = await signIn(email, password);
     if (res.error) { setError(res.error); setSubmitting(false); }
+    else { router.replace('/dashboard'); }
   };
 
   return (
-    <div className="relative min-h-screen w-full flex bg-slate-950 font-sans text-slate-100 overflow-hidden">
+    /* ── Full-viewport shell ── */
+    <div className="relative min-h-screen w-full flex items-center justify-center font-sans text-slate-100 overflow-hidden bg-slate-950">
 
-      {/* ── LEFT DECORATIVE PANEL (desktop only) ─── */}
-      <div className="hidden lg:flex lg:w-[52%] relative flex-col items-start justify-between p-12 overflow-hidden">
-        {/* Animated background orbs */}
-        <div className="absolute inset-0 z-0">
-          <motion.div
-            animate={{ scale: [1, 1.15, 1], x: [0, 30, 0], y: [0, -20, 0] }}
-            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute top-[5%] left-[-5%] w-[500px] h-[500px] rounded-full bg-emerald-500/15 blur-[130px]"
-          />
-          <motion.div
-            animate={{ scale: [1, 0.9, 1.1, 1], x: [0, -30, 20, 0], y: [0, 30, -20, 0] }}
-            transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute bottom-[-10%] right-[-5%] w-[450px] h-[450px] rounded-full bg-indigo-500/12 blur-[120px]"
-          />
-          <motion.div
-            animate={{ scale: [1, 1.2, 0.95, 1] }}
-            transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute top-[50%] left-[30%] w-[200px] h-[200px] rounded-full bg-teal-400/8 blur-[80px]"
-          />
-          {/* Grid overlay */}
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:40px_40px]" />
-        </div>
-
-        {/* Logo */}
-        <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-lg shadow-emerald-500/40">
-            <Sprout className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <div className="font-extrabold text-lg tracking-tight text-white">SmartFarm</div>
-            <div className="text-[10px] font-semibold text-emerald-400 tracking-wider uppercase">Farm Intelligence</div>
-          </div>
-        </div>
-
-        {/* Hero text */}
-        <div className="relative z-10">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.6 }}
-            className="text-5xl font-extrabold tracking-tight leading-tight mb-6"
-          >
-            Your Farm,{' '}
-            <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-400">
-              Intelligently
-            </span>
-            <br />
-            Managed.
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35, duration: 0.6 }}
-            className="text-slate-400 text-base font-medium leading-relaxed mb-10 max-w-sm"
-          >
-            Designed for farmers in Cameroon and Africa. Grow more, waste less, earn more — from one intelligent platform.
-          </motion.p>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.6 }}
-            className="flex flex-col gap-3"
-          >
-            {features.map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center">
-                  <Icon className="w-4 h-4 text-emerald-400" />
-                </div>
-                <span className="text-sm font-semibold text-slate-300">{label}</span>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Bottom tagline */}
+      {/* ── Full-viewport gradient backdrop ── */}
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        {/* Static radial spots */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(16,185,129,0.18),transparent_45%),radial-gradient(ellipse_at_bottom_right,rgba(79,70,229,0.16),transparent_40%)]" />
+        {/* Animated glow orbs */}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="relative z-10 text-xs text-slate-600 font-medium"
-        >
-          University of Buea · Department of Computer Science · SmartFarm Project 2025/2026
-        </motion.div>
+          animate={{ scale: [1, 1.2, 1], x: [0, 40, 0], y: [0, -30, 0] }}
+          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -top-32 -left-32 w-[600px] h-[600px] rounded-full bg-emerald-500/14 blur-[160px]"
+        />
+        <motion.div
+          animate={{ scale: [1, 0.9, 1.15, 1], x: [0, -40, 20, 0], y: [0, 40, -20, 0] }}
+          transition={{ duration: 22, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute -bottom-40 -right-40 w-[550px] h-[550px] rounded-full bg-indigo-500/12 blur-[150px]"
+        />
+        <motion.div
+          animate={{ scale: [1, 1.3, 0.95, 1] }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] rounded-full bg-teal-400/6 blur-[120px]"
+        />
+        {/* Subtle grid */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff04_1px,transparent_1px),linear-gradient(to_bottom,#ffffff04_1px,transparent_1px)] bg-[size:44px_44px]" />
       </div>
 
-      {/* ── RIGHT FORM PANEL ─── */}
-      <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
-        {/* Background for right side */}
-        <div className="absolute inset-0 lg:hidden">
-          <motion.div
-            animate={{ scale: [1, 1.1, 0.95, 1], x: [0, 40, -20, 0], y: [0, -30, 20, 0] }}
-            transition={{ duration: 15, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute top-[15%] left-[10%] w-[300px] h-[300px] rounded-full bg-emerald-500/10 blur-[100px]"
-          />
-          <motion.div
-            animate={{ scale: [1, 0.9, 1.15, 1], x: [0, -40, 30, 0], y: [0, 40, -30, 0] }}
-            transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute bottom-[15%] right-[10%] w-[350px] h-[350px] rounded-full bg-indigo-500/10 blur-[120px]"
-          />
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff03_1px,transparent_1px),linear-gradient(to_bottom,#ffffff03_1px,transparent_1px)] bg-[size:40px_40px]" />
-        </div>
+      {/* ── Page content (above backdrop) ── */}
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 py-12 flex items-center justify-center gap-12 lg:gap-16">
 
+        {/* ── LEFT: branding panel (desktop only) ── */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: 'easeOut' }}
-          className="relative z-10 w-full max-w-sm"
+          initial={{ opacity: 0, x: -40 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.7, ease: 'easeOut' }}
+          className="hidden lg:flex flex-col gap-8 flex-1 max-w-sm"
         >
-          {/* Mobile-only logo */}
-          <div className="flex flex-col items-center text-center mb-8 lg:hidden">
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-400 to-emerald-600 border border-emerald-500/30 shadow-xl shadow-emerald-500/30 mb-4"
-            >
-              <Sprout className="h-8 w-8 text-white" />
-            </motion.div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-white">SmartFarm</h1>
+          {/* Logo */}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 shadow-lg shadow-emerald-500/10">
+              <Sprout className="w-6 h-6 text-emerald-400" />
+            </div>
+            <div>
+              <p className="text-xl font-extrabold text-white tracking-tight">SmartFarm</p>
+              <p className="text-xs text-slate-400 font-medium">Farm Intelligence Platform</p>
+            </div>
           </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl font-extrabold tracking-tight text-white">Welcome back</h2>
-            <p className="text-slate-400 text-sm mt-1.5 font-medium">Sign in to your farm dashboard</p>
+          {/* Headline */}
+          <div className="space-y-3">
+            <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
+              Manage your farm<br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">smarter, faster.</span>
+            </h1>
+            <p className="text-slate-400 text-base leading-relaxed">
+              Sign in to access your fields, financials, and farm team — all in one dashboard.
+            </p>
           </div>
 
-          {/* Prototype hint banner */}
-          {isLocal && (
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.2 }}
-              className="mb-5 flex gap-3 p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs leading-relaxed font-medium"
-            >
-              <Info className="w-4 h-4 shrink-0 text-indigo-400 mt-0.5" />
-              <div>
-                <span className="font-bold block text-white mb-0.5">Standalone Mode</span>
-                Use <code className="text-white bg-indigo-500/20 px-1 py-0.5 rounded font-mono">admin@smartfarm.com</code> / <code className="text-white bg-indigo-500/20 px-1 py-0.5 rounded font-mono">admin123</code>
+          {/* Feature list */}
+          <div className="space-y-3">
+            {[
+              { icon: Wheat, label: 'Crop & Field Management', color: 'text-emerald-400', bg: 'bg-emerald-500/10 border-emerald-500/20' },
+              { icon: BarChart3, label: 'Financial Analytics', color: 'text-sky-400', bg: 'bg-sky-500/10 border-sky-500/20' },
+              { icon: Users, label: 'Worker Task Tracking', color: 'text-violet-400', bg: 'bg-violet-500/10 border-violet-500/20' },
+            ].map(({ icon: Icon, label, color, bg }) => (
+              <div key={label} className={`flex items-center gap-3 px-4 py-3 rounded-xl border ${bg} backdrop-blur-sm`}>
+                <Icon className={`w-5 h-5 ${color} shrink-0`} />
+                <span className="text-sm font-semibold text-slate-200">{label}</span>
               </div>
-            </motion.div>
-          )}
+            ))}
+          </div>
 
-          {/* Card form */}
-          <div className="bg-slate-900/60 backdrop-blur-xl border border-slate-800/80 p-7 rounded-2xl shadow-2xl shadow-black/40">
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <ShieldCheck className="w-4 h-4 text-emerald-500" />
+            <span>Secured with Supabase authentication</span>
+          </div>
+        </motion.div>
+
+        {/* ── RIGHT: auth card ── */}
+        <motion.div
+          initial={{ opacity: 0, y: 32 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: 'easeOut', delay: 0.1 }}
+          className="w-full max-w-md"
+        >
+          {/* Mobile logo */}
+          <div className="flex lg:hidden items-center gap-2 mb-6 justify-center">
+            <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-500/15 border border-emerald-500/30">
+              <Sprout className="w-5 h-5 text-emerald-400" />
+            </div>
+            <span className="text-lg font-extrabold text-white">SmartFarm</span>
+          </div>
+
+          <div className="bg-slate-900/60 backdrop-blur-2xl border border-slate-700/60 rounded-3xl shadow-2xl shadow-black/50 p-8">
+            {/* ── Card title ── */}
+            <div className="mb-7 space-y-1">
+              <h2 className="text-2xl font-extrabold text-white tracking-tight">Welcome back</h2>
+              <p className="text-sm text-slate-400">Sign in to your SmartFarm account to continue.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+              {/* Error banner */}
               {error && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  className="flex items-center gap-2.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-semibold"
+                <div
+                  role="alert"
+                  aria-live="assertive"
+                  style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '12px 14px', borderRadius: '12px', background: 'rgba(244,63,94,0.12)', border: '1px solid rgba(244,63,94,0.3)', color: '#fca5a5', fontSize: '14px', fontWeight: 500 }}
                 >
-                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
+                  <AlertCircle style={{ width: 16, height: 16, flexShrink: 0, color: '#f87171' }} />
                   <span>{error}</span>
-                </motion.div>
+                </div>
               )}
 
               {/* Email */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Email Address</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                  <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
+                    id="login-email"
                     type="email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="name@domain.com"
-                    className="w-full pl-10 pr-4 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-sm font-medium placeholder:text-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-white"
-                    required
-                    id="login-email"
+                    className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/60 outline-none transition-all text-white"
                   />
                 </div>
               </div>
 
               {/* Password */}
               <div className="space-y-1.5">
-                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Password</label>
+                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider">Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
                   <input
-                    type={showPassword ? 'text' : 'password'}
+                    id="login-password"
+                    type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-10 pr-11 py-3 bg-slate-950/60 border border-slate-800 rounded-xl text-sm font-medium placeholder:text-slate-700 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 outline-none transition-all text-white"
-                    required
-                    id="login-password"
+                    className="w-full pl-11 pr-4 py-3 bg-slate-950/60 border border-slate-700 rounded-xl text-sm font-medium placeholder:text-slate-600 focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500/60 outline-none transition-all text-white"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(v => !v)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400 transition-colors cursor-pointer"
-                  >
-                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
                 </div>
               </div>
 
+              {/* Submit */}
               <button
+                id="login-submit"
                 type="submit"
                 disabled={submitting}
-                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-white font-extrabold py-3.5 shadow-lg shadow-emerald-500/25 cursor-pointer disabled:opacity-50 transition-all text-sm mt-2"
-                id="login-submit"
+                className="group flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 active:bg-emerald-600 text-slate-950 font-extrabold py-3.5 shadow-lg shadow-emerald-500/20 cursor-pointer disabled:opacity-50 transition-all text-sm mt-2"
               >
                 {submitting ? (
-                  <div className="w-5 h-5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
                     <span>Sign In</span>
@@ -246,10 +201,20 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <div className="mt-5 text-center text-xs">
-              <span className="text-slate-600">Don&apos;t have an account? </span>
-              <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
-                Register here
+            {/* Footer */}
+            <div className="mt-6 pt-5 border-t border-slate-800 flex flex-col gap-3 text-center text-sm">
+              <p className="text-slate-500">
+                Need a new account?{' '}
+                <Link href="/signup" className="text-emerald-400 hover:text-emerald-300 font-bold transition-colors">
+                  Register here
+                </Link>
+              </p>
+              <Link
+                href="/landing"
+                className="inline-flex items-center justify-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 transition-colors"
+              >
+                <Globe className="w-3.5 h-3.5" />
+                Learn more about SmartFarm
               </Link>
             </div>
           </div>

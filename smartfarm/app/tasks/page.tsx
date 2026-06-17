@@ -146,21 +146,23 @@ export default function TasksPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 max-w-5xl mx-auto pb-10">
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Task Management</h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">Assign, track, and complete farm operations.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <button 
-              onClick={() => setOpen((v) => !v)} 
-              className="flex items-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-white text-sm font-bold shadow-md shadow-emerald-500/20 transition-all cursor-pointer"
-            >
-              <Plus className="w-4 h-4" />
-              {open ? 'Cancel' : 'New Task'}
-            </button>
-          </div>
-        </header>
+        <div className="grid gap-6 rounded-[2rem] border border-slate-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-xl p-6 shadow-sm">
+          <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Task Management</h1>
+              <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">Assign, track, and complete farm operations.</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={() => setOpen((v) => !v)} 
+                className="flex items-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                {open ? 'Cancel' : 'New Task'}
+              </button>
+            </div>
+          </header>
+        </div>
 
         {/* Task Form Drawer */}
         <AnimatePresence>

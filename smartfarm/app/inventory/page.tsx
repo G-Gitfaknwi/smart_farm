@@ -2,8 +2,8 @@
 
 import { useMemo, useState, useEffect } from "react";
 import DashboardLayout from "../../components/layout/DashboardLayout";
-import InventoryCard from "../../components/inventory/InventoryCard";
 import AddEditItemDialog from "../../components/inventory/AddEditItemDialog";
+import InventoryCard from "../../components/inventory/InventoryCard";
 import { dbService } from "../../lib/services/db";
 import { Plus, Box, Search, AlertTriangle, Layers, Package } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -20,7 +20,7 @@ const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { st
 const cardAnim = { hidden: { opacity: 0, y: 8 }, show: { opacity: 1, y: 0, transition: { ease: "easeOut" as const, duration: 0.3 } } };
 
 export default function InventoryPage() {
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState([] as any[]);
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [q, setQ] = useState("");
   const [loading, setLoading] = useState(true);
@@ -53,9 +53,14 @@ export default function InventoryPage() {
   }), [items]);
 
   const handleSaveItem = async (data: any) => {
-    if (data.id) await dbService.updateInventoryItem(data.id, data);
-    else await dbService.createInventoryItem(data);
-    loadData();
+    const res = data.id 
+      ? await dbService.updateInventoryItem(data.id, data)
+      : await dbService.createInventoryItem(data);
+    if (res) {
+      loadData();
+      return true;
+    }
+    return false;
   };
 
   const handleDeleteItem = async (id: string) => {
@@ -72,33 +77,26 @@ export default function InventoryPage() {
   return (
     <DashboardLayout>
       <div className="space-y-8 pb-10">
-
-        {/* ── Header ─────────────────────────────────── */}
-        <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-bold mb-3 tracking-wide">
-              <Package className="w-3.5 h-3.5" />
-              Stock Management
+        <div className="grid gap-6 rounded-[2rem] border border-slate-200/50 dark:border-zinc-800/50 bg-white/80 dark:bg-zinc-950/70 backdrop-blur-xl p-6 shadow-sm">
+          {/* Header */}
+          <header className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">Inventory Management</h1>
+              <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1">
+                Track feeds, seeds, fertilizers, and medical inputs.
+              </p>
             </div>
-            <h1 className="sf-heading">Inventory</h1>
-            <p className="text-sm font-medium text-slate-500 dark:text-zinc-400 mt-1.5">
-              Track feeds, seeds, fertilizers, and medical inputs.
-            </p>
-          </div>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => { setSelectedItem(null); setDialogOpen(true); }}
-            className="sf-btn-primary shrink-0"
-            id="inventory-add-btn"
-          >
-            <Plus className="w-4 h-4" />
-            Add Stock Item
-          </motion.button>
-        </header>
+            <button 
+              onClick={() => { setSelectedItem(null); setDialogOpen(true); }}
+              className="flex items-center justify-center gap-2 rounded-2xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2.5 text-white text-sm font-bold shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Add Stock Item
+            </button>
+          </header>
 
-        {/* ── Stats Row ───────────────────────────────── */}
-        <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {/* Aggregate Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
             { label: "Total Items Logged", value: stats.totalItems, icon: Box, color: "text-emerald-600 dark:text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
             { label: "Low Stock Warnings", value: stats.lowStock, icon: AlertTriangle, color: stats.lowStock > 0 ? "text-rose-600 dark:text-rose-400" : "text-slate-400", bg: stats.lowStock > 0 ? "bg-rose-500/10" : "bg-slate-500/10", border: stats.lowStock > 0 ? "border-rose-500/20" : "border-slate-200/50 dark:border-zinc-800/50" },
@@ -112,7 +110,7 @@ export default function InventoryPage() {
               <div className="text-2xl font-extrabold text-slate-900 dark:text-white">{value}</div>
             </motion.div>
           ))}
-        </motion.div>
+        </div>
 
         {/* ── Low Stock Banner ─────────────────────────── */}
         <AnimatePresence>
@@ -202,6 +200,7 @@ export default function InventoryPage() {
             </AnimatePresence>
           </motion.section>
         )}
+      </div>
       </div>
 
       <AddEditItemDialog open={dialogOpen} onOpenChange={setDialogOpen} item={selectedItem} onSave={handleSaveItem} />
