@@ -65,7 +65,7 @@ export default function SettingsPage() {
 
             <div>
               <div className="bg-white/60 dark:bg-zinc-900/60 p-6 rounded-2xl border border-slate-200/50 dark:border-zinc-800/50">
-                <TeamManagement team={team} />
+                <TeamManagement team={team} farmId={profile?.id} />
               </div>
             </div>
           </div>
